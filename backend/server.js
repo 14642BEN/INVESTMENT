@@ -1,56 +1,31 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const User = require('./models/User');
-const Investment = require('./models/Investment');
-const authMiddleware = require('./middleware/auth');
+// server.js
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();   // ✅ load .env or Render environment
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb://localhost:27017/investments');
+// ✅ Use environment variable for MongoDB URI
+const uri = process.env.MONGO_URI;
+if (!uri) {
+  console.error("❌ MONGO_URI is not defined in environment variables");
+  process.exit(1);
+}
 
-// Register
-app.post('/api/register', async (req, res) => {
-  const { username, email, password } = req.body;
-  try {
-    const user = await User.create({ username, email, password });
-    res.json({ message: 'User created successfully' });
-  } catch (err) {
-    res.status(400).json({ error: 'Email already exists' });
-  }
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ MongoDB connected"))
+.catch(err => console.error("❌ MongoDB connection error:", err));
+
+app.get("/", (req, res) => {
+  res.send("Backend running...");
 });
 
-// Login
-app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user || !(await user.comparePassword(password))) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  const token = jwt.sign({ id: user._id, email: user.email }, 'secretkey', {
-    expiresIn: '2h',
-  });
-  res.json({ token, user });
-});
-
-// Protected: Make investment
-app.post('/api/invest', authMiddleware, async (req, res) => {
-  const { packageType, amount } = req.body;
-  const investment = await Investment.create({
-    userId: req.user.id,
-    packageType,
-    amount,
-  });
-  res.json(investment);
-});
-
-// Admin: Get all investments
-app.get('/api/investments', async (req, res) => {
-  const investments = await Investment.find().populate('userId');
-  res.json(investments);
-});
-
-app.listen(5000, () => console.log('Server started on http://localhost:5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
