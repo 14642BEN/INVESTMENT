@@ -16,16 +16,25 @@ if (!uri) {
   process.exit(1);
 }
 
-mongoose.connect(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ MongoDB connected"))
-.catch(err => console.error("❌ MongoDB connection error:", err));
+// ✅ Connect to MongoDB
+mongoose.connect(uri)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
+// Root route
 app.get("/", (req, res) => {
   res.send("Backend running...");
 });
 
+// ✅ Demo investments API route
+app.get("/api/investments", (req, res) => {
+  res.json([
+    { id: 1, name: "Bronze Package", price: 50, description: "Starter investment package" },
+    { id: 2, name: "Silver Package", price: 100, description: "Intermediate investment package" },
+    { id: 3, name: "Gold Package", price: 500, description: "Premium investment package" }
+  ]);
+});
+
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
